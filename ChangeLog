@@ -1,0 +1,5 @@
+2010-10-12  Stanislav Sinyagin  <ssinyagin@users.sourceforge.net>
+
+	* spectrum-ddcfg.pl:
+	added $Torrus::DevDiscover::SpectrumDevices::onlyIfTypes
+

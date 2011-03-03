@@ -1,0 +1,214 @@
+#!@PERL@
+#  Copyright (C) 2010  Stanislav Sinyagin
+#
+#  This program is free software; you can redistribute it and/or modify
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; either version 2 of the License, or
+#  (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software
+#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
+
+# $Id$
+# Stanislav Sinyagin <ssinyagin@yahoo.com>
+
+BEGIN { require '@torrus_config_pl@'; }
+
+use strict;
+use Getopt::Long;
+
+use Spectrum::CLI;
+use JSON;
+use IO::File;
+
+use Torrus::Log;
+
+$ENV{'SPECROOT'} = '@specroot@';
+
+my $outfile = '-';
+my $server;
+my $debug = 0;
+my $verbose = 0;
+
+
+
+my $ok = GetOptions( 'out=s'       => \$outfile,
+                     'server=s'    => \$server,
+                     'verbose'     => \$verbose,
+                     'debug'       => \$debug );
+
+if( not $ok or scalar( @ARGV ) > 0 )
+{
+    print STDERR "Usage: $0 --out=FILE [options...]\n",
+    "Options:\n",
+    " --out=FILE           Spectrum data used by DevDiscover\n",
+    " --server=NAME        Spectrum server name if different from default\n",
+    " --verbose            print extra information\n",
+    " --debug              print debugging information\n";
+    
+    exit 1;
+}
+
+if( $debug )
+{
+    Torrus::Log::setLevel('debug');
+}
+elsif( $verbose )
+{
+    Torrus::Log::setLevel('verbose');
+}
+
+
+Verbose('Connecting to Spectrum server');
+
+my @specargs;
+if( defined($server) )
+{
+    push( @specargs, $server );
+}
+push( @specargs, { verbose => 1, Verbose => 1 } );
+
+
+my $spec = new Spectrum::CLI( @specargs );
+if( not defined($spec) )
+{
+    Error('Failed connecting to Spectrum server: ' . $!);
+    exit(1);
+}
+
+
+# Spectrum attribute names<->numbers mapping
+my %attr_name_id =
+    ('Network_Address'                 => '0x12d7f',
+     'IfModelNameOption'               => '0x12a1e',
+     'IfModelNameOptionSecondary'      => '0x12d7b',
+     'ifIndex'                         => '0x11348',
+     'ifDescr'                         => '0x1134b',
+     'ifType'                          => '0x1134c',
+     'ifName'                          => '0x11f6f',
+     'ifAlias'                         => '0x11f84',
+     );
+
+my %attr_id_name;
+while( my ($key, $val) = each %attr_name_id )
+{
+    $attr_id_name{$val} = $key;
+}
+
+
+my %model_type_blacklist =
+    ('0x10290'  => 1,  # Pingable
+     '0x100ae'  => 1,  # Fanout
+     );
+     
+
+# get the list of devices
+my $devices = $spec->show_devices();
+
+my $ret = {};
+
+foreach my $device ( @{$devices} )
+{
+    next if $model_type_blacklist{$device->{'MTypeHnd'}};
+
+    my $devmh = $device->{'MHandle'};
+    
+    ### Retrieve device properties
+
+    retrieve_properties( $spec, $devmh, $device,
+                         ['Network_Address', 'IfModelNameOption',
+                          'IfModelNameOptionSecondary'] );
+
+    next unless defined( $device->{'IfModelNameOption'} );
+    $ret->{$devmh} = $device;
+
+    
+    # 'IfModelNameOption' and 'IfModelNameOptionSecondary'
+    # refer to attribute IDs which are used for composing the interface name in
+    # Spectrum. By default, IfModelNameOption is set to 0x11f6f (ifName),
+    # and IfModelNameOptionSecondary is usually zero
+    
+    foreach my $attr ('IfModelNameOption', 'IfModelNameOptionSecondary')
+    {
+        my $val = $device->{$attr};
+        if( defined( $attr_id_name{$val} ) )
+        {
+            $val = $attr_id_name{$val};
+        }
+        elsif( $val eq '0x0' )
+        {
+            $val = '';
+        }
+        else
+        {
+            Error('Unknown attribute ID in ' . $attr . ' for device mh=' .
+                  $devmh . ' (' . $device->{'MName'} . ')');
+            $ok = 0;
+        }
+        
+        $device->{$attr} = $val;
+    }
+}
+
+$spec->disconnect();
+
+
+my $json = new JSON;
+$json->canonical;
+$json->pretty;
+
+my $fh = new IO::File( $outfile, 'w' );
+if( not defined($fh) )
+{
+    Error('Error opening ' . $outfile . ' for writing: ' . $!);
+    exit(1);
+}
+
+print $fh $json->encode( $ret );
+
+exit($ok?0:1);
+
+
+
+sub retrieve_properties
+{
+    my $spec = shift;
+    my $mh = shift;
+    my $object = shift;
+    my $propnames = shift;
+    
+    my @cmdargs;
+    foreach my $propname ( @{$propnames} )
+    {
+        push(@cmdargs, 'attr=' . $attr_name_id{$propname});
+    }
+
+    push(@cmdargs, 'mh=' . $mh);
+    
+    my $properties = $spec->show_attributes(@cmdargs);
+    
+    foreach my $prop ( @{$properties} )
+    {
+        if( defined( $attr_id_name{$prop->{'Id'}} ) )
+        {
+            $object->{$attr_id_name{$prop->{'Id'}}} = $prop->{'Value'};
+        }
+    }
+}
+
+
+
+
+# Local Variables:
+# mode: perl
+# indent-tabs-mode: nil
+# perl-indent-level: 4
+# End:
+
+
