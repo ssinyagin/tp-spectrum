@@ -105,6 +105,7 @@ while( my ($key, $val) = each %attr_name_id )
 my %model_type_blacklist =
     ('0x10290'  => 1,  # Pingable
      '0x100ae'  => 1,  # Fanout
+     '0x1048f'  => 1,  # Provider_Cloud
      );
      
 
