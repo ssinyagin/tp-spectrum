@@ -38,7 +38,7 @@ $Torrus::DevDiscover::registry{'SpectrumDevices'} = {
     };
 
 
-# CS Spectrum-specific nodeid values are only assinged to IF-MIB interfaces
+# CA Spectrum-specific nodeid values are only assinged to IF-MIB interfaces
 # of specific ifType. This is related to the fact that some Cisco virtual
 # interfaces (such as MPLS layer) have non-unique ifName, and Spectrum uses
 # ifName for interface reference.
@@ -47,6 +47,12 @@ $Torrus::DevDiscover::registry{'SpectrumDevices'} = {
 # see IANAifType-MIB.my for values
 our %onlyIfTypes;
 
+# Blacklist of devtypes where Spectrum plugin would automatically skip
+# its processing. spectrum-ddcfg.pl applies default values, and additional
+# values can be added in devdiscover-siteconfig.pl
+our %excludeDevtypes;
+
+
 sub checkdevtype
 {
     my $dd = shift;
@@ -54,11 +60,24 @@ sub checkdevtype
 
     if( $devdetails->param('SpectrumDevices::manage') eq 'yes' )
     {
+        foreach my $devtype (keys %excludeDevtypes)
+        {
+            if( $devdetails->isDevType($devtype) )
+            {
+                Info($devdetails->param('snmp-host') .
+                     ': Device is of type ' . $devtype . ', which is listed ' .
+                     'in Spectrum plugin blacklist. Skipping Spectrum ' .
+                     'processing');
+                return 0;
+            }
+        }
+        
         my $data = $devdetails->data();
         
         if( $devdetails->hasCap('nodeidReferenceManaged') )
         {
-            Error('SpectrumDevices conflicts with ' .
+            Error($devdetails->param('snmp-host') .
+                  ': SpectrumDevices conflicts with ' .
                   $data->{'nodeidManagedBy'} . ' in nodeid management. ' .
                   'Modify the discovery instructions to enable only one of ' .
                   'the modules to manage nodeid.');
