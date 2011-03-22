@@ -228,7 +228,7 @@ sub discover
     {
         Error('Cannot find ' . $devdetails->param('snmp-host') .
               ' in Spectrum export file ' . $export_file . '. Falling back ' .
-              ' to the riginal nodeid scheme');
+              ' to the original nodeid scheme');
         return 1;
     }
 
