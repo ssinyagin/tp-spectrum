@@ -112,7 +112,13 @@ my %model_type_blacklist =
 # get the list of devices
 my $devices = $spec->show_devices();
 
+# returned hash of mh => attributes
 my $ret = {};
+
+# verify uniqueness of hostnames and IP addresses
+my $known_names = {};
+my $known_ipaddr = {};
+
 
 foreach my $device ( @{$devices} )
 {
@@ -127,6 +133,30 @@ foreach my $device ( @{$devices} )
                           'IfModelNameOptionSecondary'] );
 
     next unless defined( $device->{'IfModelNameOption'} );
+
+    if( defined($known_names->{$device->{'MName'}}) )
+    {
+        Error('Duplicate model name: ' . $device->{'MName'} . ' in ' .
+              $devmh . ' and ' . $known_names->{$device->{'MName'}});
+        next;
+    }
+    else
+    {
+        $known_names->{$device->{'MName'}} = $devmh;
+    }
+
+    if( defined($known_ipaddr->{$device->{'Network_Address'}}) )
+    {
+        Error('Duplicate IP address: ' . $device->{'Network_Address'} .
+              ' in ' . $devmh . ' and ' .
+              $known_ipaddr->{$device->{'Network_Address'}});
+        next;
+    }
+    else
+    {
+        $known_ipaddr->{$device->{'Network_Address'}} = $devmh;
+    }
+    
     $ret->{$devmh} = $device;
 
     
