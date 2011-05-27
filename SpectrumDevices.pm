@@ -235,6 +235,27 @@ sub discover
     # Now we matched the current device with the Spectrum MH
     Debug('Found Spectrum MH: ' . $mh);
 
+    # Copy the old nodeid values into a new reference map
+    my $orig_nameref_ifNodeidPrefix =
+        $data->{'nameref'}{'ifNodeidPrefix'};
+    my $orig_nameref_ifNodeid =
+        $data->{'nameref'}{'ifNodeid'};
+
+    $data->{'nameref'}{'ifNodeidPrefix'} = 'Spectrum_ifNodeidPrefix';
+    $data->{'nameref'}{'ifNodeid'} = 'Spectrum_ifNodeid';
+
+    foreach my $ifIndex ( keys %{$data->{'interfaces'}} )
+    {
+        my $interface = $data->{'interfaces'}{$ifIndex};
+        next if $interface->{'excluded'};
+
+        $interface->{$data->{'nameref'}{'ifNodeidPrefix'}} =
+            $interface->{$orig_nameref_ifNodeidPrefix};
+        
+        $interface->{$data->{'nameref'}{'ifNodeid'}} =
+            $interface->{$orig_nameref_ifNodeid};
+    }
+
     my $ifnameref_primary = $spectrum_data->{$mh}{'IfModelNameOption'};
     my $ifnameref_secondary =
         $spectrum_data->{$mh}{'IfModelNameOptionSecondary'};
