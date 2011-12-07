@@ -278,7 +278,7 @@ sub discover
         {
             Error('Cannot find ' . $ifnameref_primary .
                   ' for ifIndex=' . $ifIndex);
-            return 0;
+            next;
         }
 
         if( length( $ifnameref_secondary ) )
