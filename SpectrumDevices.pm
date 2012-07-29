@@ -227,7 +227,7 @@ sub discover
     if( not defined($mh) )
     {
         Error('Cannot find ' . $devdetails->param('snmp-host') .
-              ' in Spectrum export file ' . $export_file . '. Falling back ' .
+              ' in Spectrum export file ' . $export_file . '. Falling back' .
               ' to the original nodeid scheme');
         return 1;
     }
