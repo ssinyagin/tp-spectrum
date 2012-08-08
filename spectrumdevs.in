@@ -31,7 +31,7 @@ use Torrus::Log;
 
 $ENV{'SPECROOT'} = '@specroot@';
 
-my $outfile = '-';
+my $outfile;
 my $server;
 my $debug = 0;
 my $verbose = 0;
@@ -43,7 +43,7 @@ my $ok = GetOptions( 'out=s'       => \$outfile,
                      'verbose'     => \$verbose,
                      'debug'       => \$debug );
 
-if( not $ok or scalar( @ARGV ) > 0 )
+if( not $ok or not defined($outfile) or scalar( @ARGV ) > 0 )
 {
     print STDERR "Usage: $0 --out=FILE [options...]\n",
     "Options:\n",
@@ -202,6 +202,8 @@ if( not defined($fh) )
 }
 
 print $fh $json->encode( $ret );
+$fh->close();
+verbose('Wrote ' . $outfile);
 
 exit($ok?0:1);
 
