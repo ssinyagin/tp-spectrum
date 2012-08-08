@@ -1,3 +1,11 @@
+2012-08-08  Stanislav Sinyagin  <ssinyagin@users.sourceforge.net>
+
+	* spectrumdevs.in: now retrieving SNMP community and port, and
+	also the parent objects
+
+	* spectrum_genddx.in: new utility that generates DDX out of
+	Spectrum data
+
 2010-10-12  Stanislav Sinyagin  <ssinyagin@users.sourceforge.net>
 
 	* spectrum-ddcfg.pl:

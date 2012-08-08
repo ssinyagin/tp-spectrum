@@ -44,9 +44,13 @@ dist_wrapper_DATA = spectrum-wrapper.sh
 
 #####   Executable scripts  #####
 pkgbindir = @pkgbindir@
-pkgbin_SCRIPTS = spectrumdevs
+pkgbin_SCRIPTS = spectrumdevs spectrum_genddx
+
 spectrumdevs: spectrumdevs.in
 	$(SUBST) spectrumdevs.in > spectrumdevs
+
+spectrum_genddx: spectrum_genddx.in
+	$(SUBST) spectrum_genddx.in > spectrum_genddx
 
 
 #####   Documentation files   #####
