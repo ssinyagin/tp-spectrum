@@ -177,11 +177,16 @@ foreach my $mh ( sort keys %{$specdata} )
     }
 
     my $name = $spec_node_data->{'MName'};
+
+    # Community string in Spectrum is sometimes prefixes with #v2/ prefix
+    my $community = $spec_node_data->{'Community_Name'};
+    $community =~ s/^\#(v?)[12]\///;
+    
     my $params = {
         'system-id' => $name,
         'snmp-host' => $spec_node_data->{'Network_Address'},
         'snmp-port'      => $spec_node_data->{'Agent_Port'},
-        'snmp-community' => $spec_node_data->{'Community_Name'},
+        'snmp-community' => $community,
         'output-file' => $Torrus::Spectrum::nodes_path . '/' . $name . '.xml',
         'SpectrumDevices::device-mh' => $mh,
     };
