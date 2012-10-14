@@ -15,9 +15,10 @@ Unpack the plugin distribution package in some directory:
   gzip -dc tp-spectrum-1.X.tar.gz | tar xvf -
 
 Then run the Torrus plugin installation utility, pointing to the
-unpacked plugin directory:
+unpacked plugin directory. Specify the Spectrum home directory if it's
+different from "/home/spectrum":
 
-  torrus install_plugin tp-spectrum-1.X
+  specroot=/usr/Spectrum torrus install_plugin tp-spectrum-1.X
 
 
 =head2 Usage
